@@ -1,0 +1,49 @@
+networks:
+  cluster_net:
+    driver: bridge
+
+services:
+  # --- CLUSTER SYNC (5 NÓS) ---
+  node0: &node_base
+    build: .
+    environment: &env
+      - PYTHONUNBUFFERED=1
+    command: python main.py 0
+    networks: [cluster_net]
+  
+  node1: { <<: *node_base, command: python main.py 1 }
+  node2: { <<: *node_base, command: python main.py 2 }
+  node3: { <<: *node_base, command: python main.py 3 }
+  node4: { <<: *node_base, command: python main.py 4 }
+
+  # --- CLIENTES 
+  client0: &client_base
+    build: .
+    command: python client.py
+    environment:
+      - PYTHONUNBUFFERED=1
+      - NODE_HOST=node0
+      - NODE_PORT=5000
+      - CLIENT_ID=Cliente_Alpha
+    depends_on: [node0]
+    networks: [cluster_net]
+
+  client1:
+    <<: *client_base
+    environment: [ "NODE_HOST=node1", "NODE_PORT=5000", "CLIENT_ID=Cliente_Bravo", "PYTHONUNBUFFERED=1" ]
+    depends_on: [node1]
+
+  client2:
+    <<: *client_base
+    environment: [ "NODE_HOST=node2", "NODE_PORT=5000", "CLIENT_ID=Cliente_Charlie", "PYTHONUNBUFFERED=1" ]
+    depends_on: [node2]
+
+  client3:
+    <<: *client_base
+    environment: [ "NODE_HOST=node3", "NODE_PORT=5000", "CLIENT_ID=Cliente_Delta", "PYTHONUNBUFFERED=1" ]
+    depends_on: [node3]
+
+  client4:
+    <<: *client_base
+    environment: [ "NODE_HOST=node4", "NODE_PORT=5000", "CLIENT_ID=Cliente_Echo", "PYTHONUNBUFFERED=1" ]
+    depends_on: [node4]
